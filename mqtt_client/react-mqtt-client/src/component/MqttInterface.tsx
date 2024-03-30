@@ -10,10 +10,13 @@ interface MQTTOptions {
   password: string;
   protocol: string;
 }
+type QoS = 0 | 1 | 2;
+
 
 const MQTTInterface = () => {
   const [client, setClient] = useState<MqttClient | null>(null);
   const [connectStatus, setConnectStatus] = useState<string>("");
+  const [isSub, setIsSub] = useState<boolean>();
   const [mqttOption, setMQTTOption] = useState<MQTTOptions>({
     protocol: 'mqtt',
     host: 'localhost',
@@ -22,6 +25,8 @@ const MQTTInterface = () => {
     username: 'jeremie',
     password: 'jeremie'
   });
+  const [receivedMessages, setReceivedMessages] = useState<Array<{ topic: string; message: string }>>([]);
+
 
   const updateMQTTOption = (key: keyof MQTTOptions, value: string | number) => {
     setMQTTOption(prev => ({ ...prev, [key]: value }));
@@ -29,7 +34,7 @@ const MQTTInterface = () => {
 
   const mqttConnect = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault(); // Prevent default form submission behavior if applicable
-    const { host, port, protocol, ...options  } = mqttOption;
+    const { host, port, protocol, ...options } = mqttOption;
     const options_c = {
       options,
       clean: true,
@@ -51,6 +56,49 @@ const MQTTInterface = () => {
     }
   };
 
+  const mqttSub = (topic: string, qos: QoS) => {
+    if (client) {
+      client.subscribe(topic, { qos }, (error) => {
+        if (error) {
+          console.log('Subscribe to topics error', error);
+          setIsSub(false);
+          return;
+        }
+        setIsSub(true);
+      });
+    }
+  };
+
+  const handleSubscribe = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const topic = form.topic.value;
+    const qos = parseInt(form.qos.value, 10) as QoS; // Ensure qos is treated as QoS type
+    mqttSub(topic, qos);
+  };
+
+  const mqttPublish = (topic: string, qos: QoS, payload: string) => {
+    if (client) {
+      client.publish(topic, payload, { qos }, error => {
+        if (error) {
+          console.log('Publish error: ', error);
+        } else {
+          console.log('Publish successful');
+        }
+      });
+    }
+  };
+
+  const handlePublish = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const topic = form.topic.value;
+    const qos = parseInt(form.qos.value, 10) as QoS;
+    const payload = form.payload.value;
+    mqttPublish(topic, qos, payload);
+  };
+
+
   useEffect(() => {
     if (client) {
       client.on('connect', () => {
@@ -64,10 +112,12 @@ const MQTTInterface = () => {
         setConnectStatus('Reconnecting');
       });
       client.on('message', (topic, message) => {
-        console.log(`Message received on topic ${topic}: ${message.toString()}`);
+        const newMessage = { topic, message: message.toString() };
+        setReceivedMessages(prevMessages => [...prevMessages, newMessage]);
       });
     }
   }, [client]);
+
 
   return (
     <div className="container">
@@ -86,27 +136,44 @@ const MQTTInterface = () => {
 
       <div className="section subscriber">
         <h2>Subscriber</h2>
-        <input type="text" id="sub-topic" placeholder="Topic" />
-        <select id="sub-qos">
-          <option value="0">QoS 0</option>
-          <option value="1">QoS 1</option>
-          <option value="2">QoS 2</option>
-        </select>
-        <button id="subscribe">Subscribe</button>
+        <form onSubmit={handleSubscribe}>
+          <input type="text" name="topic" placeholder="Topic" required />
+          <select name="qos" required>
+            <option value="0">QoS 0</option>
+            <option value="1">QoS 1</option>
+            <option value="2">QoS 2</option>
+          </select>
+          <button id="subscribe" type="submit">Subscribe</button>
+        </form>
+        {isSub !== null && <div>Subscription Status: {isSub ? "Subscribed" : "Failed to Subscribe"}</div>}
       </div>
+
 
 
       <div className="section publisher">
         <h2>Publisher</h2>
-        <input type="text" id="pub-topic" placeholder="Topic" />
-        <select id="pub-qos">
-          <option value="0">QoS 0</option>
-          <option value="1">QoS 1</option>
-          <option value="2">QoS 2</option>
-        </select>
-        <input type="text" id="payload" placeholder="Payload" />
-        <button id="publish">Publish</button>
-      </div> 
+        <form onSubmit={handlePublish}>
+          <input type="text" name="topic" placeholder="Topic" required />
+          <select name="qos" required>
+            <option value="0">QoS 0</option>
+            <option value="1">QoS 1</option>
+            <option value="2">QoS 2</option>
+          </select>
+          <input type="text" name="payload" placeholder="Payload" required />
+          <button id="publish" type="submit">Publish</button>
+        </form>
+      </div>
+      <div className="section received-messages">
+        <h2>Received Messages</h2>
+        <ul>
+          {receivedMessages.map((msg, index) => (
+            <li key={index}>
+              <strong>Topic:</strong> {msg.topic}, <strong>Message:</strong> {msg.message}
+            </li>
+          ))}
+        </ul>
+      </div>
+
 
     </div>
 
