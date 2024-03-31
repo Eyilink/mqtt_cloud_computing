@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mqttwebapp
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mqttwebapp
+  template:
+    metadata:
+      labels:
+        app: mqttwebapp
+    spec:
+      containers:
+      - name: mqttwebapp
+        image: eyilink/mqtt_web_client:latest
+        ports:
+        - containerPort: 80
