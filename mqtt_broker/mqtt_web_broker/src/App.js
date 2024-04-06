@@ -8,33 +8,43 @@ function App() {
   const [client, setClient] = useState(null);
 
   useEffect(() => {
-    const mqttClient = new Client('ws://192.168.2.81:1883/', 'clientId'); // Assuming WebSocket connection
-    mqttClient.connect({
-      onSuccess: () => {
-        console.log('Connected to MQTT broker');
-        setClient(mqttClient);
-      },
-      onFailure: (err) => {
-        console.error('Failed to connect to MQTT broker:', err);
-      }
-    });
-
+    let mqttClient = null;
+    let isConnected = false;
+  
+    if (!client) {
+      mqttClient = new Client('ws://localhost:1883/', 'clientId');
+  
+      mqttClient.connect({
+        onSuccess: () => {
+          console.log('Connected to MQTT broker');
+          setClient(mqttClient);
+          isConnected = true;
+        },
+        onFailure: (err) => {
+          console.error('Failed to connect to MQTT broker:', err);
+        }
+      });
+    }
+  
     return () => {
-      if (client) {
+      if (client && isConnected) {
         client.disconnect();
         console.log('Disconnected from MQTT broker');
       }
     };
-  }, [client]);
+  }, [client]);  
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (client && content && topic) {
+    if (client && client.isConnected() && content && topic) {
       client.send(topic, JSON.stringify({ content }));
       console.log('Message published successfully');
       setContent(''); // Clear input field after submission
+    } else {
+      console.error('Unable to publish message: Client not connected or invalid content/topic');
     }
   };
+  
 
   return (
     <div className="container">
@@ -56,7 +66,7 @@ function App() {
           onChange={(e) => setContent(e.target.value)}
           placeholder="Enter your content"
         />
-        <button type="submit">Publish</button>
+        <button type="submit" disabled={!client || !client.isConnected()}>Publish</button>
       </form>
     </div>
   );
