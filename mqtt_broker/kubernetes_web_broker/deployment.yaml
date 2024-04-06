@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mqttwebbroker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mqttwebbroker
+  template:
+    metadata:
+      labels:
+        app: mqttwebbroker
+    spec:
+      containers:
+        - name: mqttwebbroker
+          image: checkitouts/mqtt-broker-app:latest
+          ports:
+            - containerPort: 80
