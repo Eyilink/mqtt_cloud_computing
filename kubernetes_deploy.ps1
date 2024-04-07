@@ -16,7 +16,8 @@ if ($?) {
     }
 
     # Apply Kubernetes configurations for the web application
-    kubectl apply -k ./kubernetes_web_app/
+    kubectl apply -f ./kubernetes_web_app/deployment.yaml
+    kubectl apply -f ./kubernetes_web_app/service.yaml
     if ($?) {
         Write-Output "Applied web application configurations successfully."
     }
@@ -24,9 +25,18 @@ if ($?) {
         Write-Output "Failed to apply web application configurations."
         exit 1
     }
+    kubectl apply -f ./mqtt_broker/kubernetes_web_broker/deployment.yaml
+    kubectl apply -f ./mqtt_broker/kubernetes_web_broker/service.yaml
+    if ($?) {
+        Write-Output "Applied web application for smartphone configurations successfully."
+    }
+    else {
+        Write-Output "Failed to apply web application for smartphone configurations."
+        exit 1
+    }
 }
 else {
     Write-Output "Failed to start Minikube."
     exit 1
 }
-
+minikube tunnel

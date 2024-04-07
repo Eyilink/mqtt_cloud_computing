@@ -16,4 +16,4 @@ spec:
         - name: mqttwebbroker
           image: checkitouts/mqtt-broker-app:latest
           ports:
-            - containerPort: 80
+            - containerPort: 3000

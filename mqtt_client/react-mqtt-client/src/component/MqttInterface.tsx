@@ -18,8 +18,8 @@ const MQTTInterface = () => {
   const [connectStatus, setConnectStatus] = useState<string>("");
   const [isSub, setIsSub] = useState<boolean>();
   const [mqttOption, setMQTTOption] = useState<MQTTOptions>({
-    protocol: 'mqtt',
-    host: 'localhost',
+    protocol: 'ws',
+    host: '10.110.84.212',
     clientId: `mqttjs_` + Math.random().toString(16).substr(2, 8),
     port: 9001,
     username: 'jeremie',
@@ -41,7 +41,7 @@ const MQTTInterface = () => {
       reconnectPeriod: 1000, // ms
       connectTimeout: 30 * 1000, // ms
     }
-    const connectUrl = `${protocol}://${host}:${port}`;
+    const connectUrl = `${protocol}://${host}:${port}/mqtt`;
     setConnectStatus('Connecting');
     console.log(options);
     setClient(mqtt.connect(connectUrl, options_c));
